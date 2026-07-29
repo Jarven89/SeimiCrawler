@@ -130,12 +130,18 @@ public class OkHttpDownloader implements SeimiDownloader {
                 seimiResponse.setBodyType(BodyType.TEXT);
                 try {
                     byte[] data = okResponseBody.bytes();
-                    String utfContent = new String(data,"UTF-8");
-                    String charsetFinal = renderRealCharset(utfContent);
-                    if (charsetFinal.equals("UTF-8")){
-                        seimiResponse.setContent(utfContent);
-                    }else {
-                        seimiResponse.setContent(new String(data,charsetFinal));
+                    // SeimiRender 的响应（JSON 信封 / 渲染产物）契约上即为 UTF-8，无需再做 HTML meta 嗅探
+                    if (request.isUseSeimiRender()) {
+                        seimiResponse.setContent(new String(data, "UTF-8"));
+                        seimiResponse.setCharset("UTF-8");
+                    } else {
+                        String utfContent = new String(data,"UTF-8");
+                        String charsetFinal = renderRealCharset(utfContent);
+                        if (charsetFinal.equals("UTF-8")){
+                            seimiResponse.setContent(utfContent);
+                        }else {
+                            seimiResponse.setContent(new String(data,charsetFinal));
+                        }
                     }
                 } catch (Exception e) {
                     logger.error("no content data");

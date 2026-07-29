@@ -38,14 +38,14 @@ public class SeimiConfig {
     private double bloomFilterFalseProbability;
 
     /**
-     * 设置SeimiAgent的主机地址，如 seimi.wanghaomiao.cn or 10.10.121.211
+     * 设置 SeimiRender 的主机地址，如 seimi.wanghaomiao.cn or 10.10.121.211
      */
-    private String seimiAgentHost;
+    private String seimiRenderHost;
 
     /**
-     * seimiAgent监听端口
+     * SeimiRender 监听端口（SeimiRender 默认 HTTP 服务端口为 8088）
      */
-    private int seimiAgentPort = 80;
+    private int seimiRenderPort = 8088;
 
     /**
      * redisson 各种分布式配置可以参考 https://github.com/redisson/redisson/wiki/2.-%E9%85%8D%E7%BD%AE%E6%96%B9%E6%B3%95
@@ -153,20 +153,64 @@ public class SeimiConfig {
         this.bloomFilterFalseProbability = bloomFilterFalseProbability;
     }
 
+    // ==================== SeimiRender（推荐使用）====================
+
+    public String getSeimiRenderHost() {
+        return seimiRenderHost;
+    }
+
+    public void setSeimiRenderHost(String seimiRenderHost) {
+        this.seimiRenderHost = seimiRenderHost;
+    }
+
+    public int getSeimiRenderPort() {
+        return seimiRenderPort;
+    }
+
+    public void setSeimiRenderPort(int seimiRenderPort) {
+        this.seimiRenderPort = seimiRenderPort;
+    }
+
+    // ==================== SeimiAgent 兼容别名（已废弃，请改用 SeimiRender 系列）====================
+
+    /**
+     * 已废弃：请改用 {@link #getSeimiRenderHost()}。
+     *
+     * @deprecated 请使用 {@link #getSeimiRenderHost()}
+     */
+    @Deprecated
     public String getSeimiAgentHost() {
-        return seimiAgentHost;
+        return seimiRenderHost;
     }
 
+    /**
+     * 已废弃：请改用 {@link #setSeimiRenderHost(String)}。
+     *
+     * @deprecated 请使用 {@link #setSeimiRenderHost(String)}
+     */
+    @Deprecated
     public void setSeimiAgentHost(String seimiAgentHost) {
-        this.seimiAgentHost = seimiAgentHost;
+        this.seimiRenderHost = seimiAgentHost;
     }
 
+    /**
+     * 已废弃：请改用 {@link #getSeimiRenderPort()}。
+     *
+     * @deprecated 请使用 {@link #getSeimiRenderPort()}
+     */
+    @Deprecated
     public int getSeimiAgentPort() {
-        return seimiAgentPort;
+        return seimiRenderPort;
     }
 
+    /**
+     * 已废弃：请改用 {@link #setSeimiRenderPort(int)}。
+     *
+     * @deprecated 请使用 {@link #setSeimiRenderPort(int)}
+     */
+    @Deprecated
     public void setSeimiAgentPort(int seimiAgentPort) {
-        this.seimiAgentPort = seimiAgentPort;
+        this.seimiRenderPort = seimiAgentPort;
     }
 
     public Config getRedissonConfig() {

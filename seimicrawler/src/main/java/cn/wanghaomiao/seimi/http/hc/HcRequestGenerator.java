@@ -19,7 +19,7 @@ import cn.wanghaomiao.seimi.config.SeimiConfig;
 import cn.wanghaomiao.seimi.def.BaseSeimiCrawler;
 import cn.wanghaomiao.seimi.exception.SeimiProcessExcepiton;
 import cn.wanghaomiao.seimi.http.HttpMethod;
-import cn.wanghaomiao.seimi.http.SeimiAgentContentType;
+import cn.wanghaomiao.seimi.http.SeimiRenderOutputType;
 import cn.wanghaomiao.seimi.spring.common.CrawlerCache;
 import cn.wanghaomiao.seimi.struct.CrawlerModel;
 import cn.wanghaomiao.seimi.struct.Request;
@@ -34,6 +34,7 @@ import org.apache.http.message.BasicNameValuePair;
 import org.springframework.util.CollectionUtils;
 
 import java.nio.charset.Charset;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -46,35 +47,31 @@ public class HcRequestGenerator {
     public static RequestBuilder getHttpRequestBuilder(Request request, CrawlerModel crawlerModel) {
         RequestBuilder requestBuilder;
         BaseSeimiCrawler crawler = crawlerModel.getInstance();
-        if (request.isUseSeimiAgent()) {
+        if (request.isUseSeimiRender()) {
             SeimiConfig config = CrawlerCache.getConfig();
-            if (config == null||StringUtils.isBlank(config.getSeimiAgentHost())) {
-                throw new SeimiProcessExcepiton("SeimiAgentHost is blank.");
+            if (config == null || StringUtils.isBlank(config.getSeimiRenderHost())) {
+                throw new SeimiProcessExcepiton("SeimiRenderHost is blank.");
             }
-            String seimiAgentUrl = "http://" + config.getSeimiAgentHost() + (config.getSeimiAgentPort() != 80 ? (":" + config.getSeimiAgentPort()) : "") + "/doload";
-            requestBuilder = RequestBuilder.post().setUri(seimiAgentUrl);
-            List<NameValuePair> nameValuePairList = new LinkedList<>();
-            nameValuePairList.add(new BasicNameValuePair("url", request.getUrl()));
-            if (StringUtils.isNotBlank(crawler.proxy())) {
-                nameValuePairList.add(new BasicNameValuePair("proxy", crawler.proxy()));
+            // SeimiRender 默认 HTTP 端口 8088；8088 非 80，故会带上端口
+            String seimiRenderUrl = "http://" + config.getSeimiRenderHost() + (config.getSeimiRenderPort() != 80 ? (":" + config.getSeimiRenderPort()) : "") + "/render";
+            requestBuilder = RequestBuilder.post().setUri(seimiRenderUrl);
+            // SeimiRender 的 /render 接收 JSON body
+            Map<String, Object> renderBody = new LinkedHashMap<>();
+            renderBody.put("url", request.getUrl());
+            // settle_ms：loadFinished 后等待 JS 执行的毫秒数；>0 才发送，否则用 SeimiRender 默认 2000
+            if (request.getSeimiRenderSettleMs() > 0) {
+                renderBody.put("settle_ms", request.getSeimiRenderSettleMs());
             }
-            if (request.getSeimiAgentRenderTime() > 0) {
-                nameValuePairList.add(new BasicNameValuePair("renderTime", String.valueOf(request.getSeimiAgentRenderTime())));
+            // output：默认 html，仅当非 HTML 时显式指定
+            SeimiRenderOutputType outputType = request.getSeimiRenderOutput();
+            if (outputType != null && outputType.val() > SeimiRenderOutputType.HTML.val()) {
+                renderBody.put("output", outputType.outputVal());
             }
-            if (StringUtils.isNotBlank(request.getSeimiAgentScript())) {
-                nameValuePairList.add(new BasicNameValuePair("script", request.getSeimiAgentScript()));
-            }
-            //如果针对SeimiAgent的请求设置是否使用cookie，以针对请求的设置为准，默认使用全局设置
-            if ((request.isSeimiAgentUseCookie() == null && crawlerModel.isUseCookie()) || (request.isSeimiAgentUseCookie() != null && request.isSeimiAgentUseCookie())) {
-                nameValuePairList.add(new BasicNameValuePair("useCookie", "1"));
-            }
-            if (request.getParams() != null && request.getParams().size() > 0) {
-                nameValuePairList.add(new BasicNameValuePair("postParam", JSON.toJSONString(request.getParams())));
-            }
-            if (request.getSeimiAgentContentType().val() > SeimiAgentContentType.HTML.val()) {
-                nameValuePairList.add(new BasicNameValuePair("contentType", request.getSeimiAgentContentType().typeVal()));
-            }
-            requestBuilder.setEntity(new UrlEncodedFormEntity(nameValuePairList, Charset.forName("utf8")));
+            // long_poll_ms：让 HTTP 同步等待渲染结果一步到位，取爬虫配置的 HTTP 超时，且不超过 SeimiRender 上限 60000
+            int longPoll = crawlerModel.getHttpTimeOut() > 0 ? Math.min(crawlerModel.getHttpTimeOut(), 60000) : 35000;
+            renderBody.put("long_poll_ms", longPoll);
+            requestBuilder.addHeader("Content-type", "application/json; charset=utf-8");
+            requestBuilder.setEntity(new StringEntity(JSON.toJSONString(renderBody), Charset.forName("UTF-8")));
         } else {
             if (HttpMethod.POST.equals(request.getHttpMethod())) {
                 requestBuilder = RequestBuilder.post().setUri(request.getUrl());

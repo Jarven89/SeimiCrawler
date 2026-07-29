@@ -129,16 +129,27 @@ public class HcDownloader implements SeimiDownloader {
                 seimiResponse.setBodyType(BodyType.TEXT);
                 try {
                     seimiResponse.setData(EntityUtils.toByteArray(entity));
-                    ContentType contentType = ContentType.get(entity);
-                    Charset charset = contentType.getCharset();
-                    if (charset==null){
-                        seimiResponse.setContent(new String(seimiResponse.getData(),"ISO-8859-1"));
-                        String docCharset = renderRealCharset(seimiResponse);
-                        seimiResponse.setContent(new String(seimiResponse.getContent().getBytes("ISO-8859-1"),docCharset));
-                        seimiResponse.setCharset(docCharset);
-                    }else {
-                        seimiResponse.setContent(new String(seimiResponse.getData(),charset));
-                        seimiResponse.setCharset(charset.name());
+                    // SeimiRender 的响应（JSON 信封 / 渲染产物）契约上即为 UTF-8，无需再做 HTML meta 嗅探
+                    if (request.isUseSeimiRender()) {
+                        seimiResponse.setContent(new String(seimiResponse.getData(), "UTF-8"));
+                        seimiResponse.setCharset("UTF-8");
+                    } else {
+                        ContentType contentType = ContentType.get(entity);
+                        Charset charset = contentType.getCharset();
+                        if (charset == null) {
+                            // 先按 UTF-8 解码（多数现代页面即 UTF-8），再用页面 meta 校正实际编码
+                            String utfContent = new String(seimiResponse.getData(), "UTF-8");
+                            String docCharset = renderRealCharset(utfContent);
+                            if ("UTF-8".equalsIgnoreCase(docCharset)) {
+                                seimiResponse.setContent(utfContent);
+                            } else {
+                                seimiResponse.setContent(new String(seimiResponse.getData(), docCharset));
+                            }
+                            seimiResponse.setCharset(docCharset);
+                        } else {
+                            seimiResponse.setContent(new String(seimiResponse.getData(), charset));
+                            seimiResponse.setCharset(charset.name());
+                        }
                     }
                 } catch (Exception e) {
                     logger.error("no content data");
@@ -156,9 +167,9 @@ public class HcDownloader implements SeimiDownloader {
         return seimiResponse;
     }
 
-    private String renderRealCharset(Response response) throws NoSuchFunctionException, XpathSyntaxErrorException, NoSuchAxisException {
+    private String renderRealCharset(String content) throws NoSuchFunctionException, XpathSyntaxErrorException, NoSuchAxisException {
         String charset;
-        JXDocument doc = response.document();
+        JXDocument doc = JXDocument.create(content);
         charset = StrFormatUtil.getFirstEmStr(doc.sel("//meta[@charset]/@charset"),"").trim();
         if (StringUtils.isBlank(charset)){
             charset = StrFormatUtil.getFirstEmStr(doc.sel("//meta[@http-equiv='charset']/@content"),"").trim();

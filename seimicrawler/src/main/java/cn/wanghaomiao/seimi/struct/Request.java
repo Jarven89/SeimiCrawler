@@ -22,6 +22,7 @@ import cn.wanghaomiao.seimi.core.SeimiDownloader;
 import cn.wanghaomiao.seimi.http.HttpMethod;
 import cn.wanghaomiao.seimi.http.SeimiAgentContentType;
 import cn.wanghaomiao.seimi.http.SeimiCookie;
+import cn.wanghaomiao.seimi.http.SeimiRenderOutputType;
 
 import java.util.HashMap;
 import java.util.List;
@@ -36,7 +37,7 @@ import java.util.Map;
 public class Request extends CommonObject {
 
     @FunctionalInterface
-    public static interface SeimiCallbackFunc<T,A1>{
+    public static interface SeimiCallbackFunc<T,A1> extends java.io.Serializable{
         void call(T t, A1 a1);
     }
 
@@ -142,33 +143,37 @@ public class Request extends CommonObject {
     private boolean skipDuplicateFilter = false;
 
     /**
-     * 针对该请求是否启用SeimiAgent
+     * 是否启用渲染后端（SeimiRender）。底层统一字段，新老两套 API（useSeimiRender / useSeimiAgent）均读写此字段以保持同步。
      */
-    private boolean useSeimiAgent = false;
-	/**
+    private boolean useRenderBackend = false;
+    /**
      * 自定义Http请求协议头
      */
-    private Map<String,String> header;
+    private Map<String, String> header;
 
     /**
-     * 定义SeimiAgent的渲染时间，单位毫秒
+     * 定义 SeimiRender 的 JS settle 等待时间（loadFinished 后等待 JS 执行的毫秒数），单位毫秒。
+     * 对应 SeimiRender {@code /render} 接口的 {@code settle_ms}。{@code <=0} 表示使用 SeimiRender 默认值。
      */
-    private long seimiAgentRenderTime = 0;
+    private long seimiRenderSettleMs = 0;
 
     /**
-     * 用于支持在SeimiAgent上执行指定的js脚本
+     * 告诉 SeimiRender 将结果渲染成何种格式返回，默认 HTML
+     */
+    private SeimiRenderOutputType seimiRenderOutput = SeimiRenderOutputType.HTML;
+
+    /**
+     * 用于支持在渲染后端执行指定的js脚本。<br>
+     * 注意：SeimiRender 暂不支持 per-request 脚本注入，该字段仅作向后兼容保留，实际不会发送给 SeimiRender。
      */
     private String seimiAgentScript;
 
     /**
-     * 指定提交到SeimiAgent的请求是否使用cookie
+     * 指定提交到渲染后端的请求是否使用cookie。<br>
+     * 注意：SeimiRender 通过浏览器插件或 {@code /cookies} 接口统一同步登录态，不支持 per-request cookie 控制，
+     * 该字段仅作向后兼容保留，实际不会发送给 SeimiRender。
      */
     private Boolean seimiAgentUseCookie;
-
-    /**
-     * 告诉SeimiAgent将结果渲染成何种格式返回，默认HTML
-     */
-    private SeimiAgentContentType seimiAgentContentType = SeimiAgentContentType.HTML;
 
     /**
      * 支持添加自定义cookie
@@ -289,33 +294,113 @@ public class Request extends CommonObject {
         return this;
     }
 
-    public Request useSeimiAgent(){
-        this.useSeimiAgent = true;
+    // ==================== SeimiRender（推荐使用）====================
+
+    /**
+     * 启用 SeimiRender 渲染后端处理该请求
+     */
+    public Request useSeimiRender() {
+        this.useRenderBackend = true;
         return this;
     }
 
-    public Request setUseSeimiAgent(boolean useSeimiAgent){
-        this.useSeimiAgent = useSeimiAgent;
+    public Request setUseSeimiRender(boolean useSeimiRender) {
+        this.useRenderBackend = useSeimiRender;
         return this;
     }
 
-    public boolean isUseSeimiAgent(){
-        return useSeimiAgent;
+    public boolean isUseSeimiRender() {
+        return useRenderBackend;
     }
 
-    public long getSeimiAgentRenderTime() {
-        return seimiAgentRenderTime;
+    /**
+     * 设置 SeimiRender 的 JS settle 等待时间（loadFinished 后等待 JS 执行的毫秒数）。{@code <=0} 表示使用 SeimiRender 默认值。
+     *
+     * @param seimiRenderSettleMs settle 毫秒数（0–30000）
+     */
+    public Request setSeimiRenderSettleMs(long seimiRenderSettleMs) {
+        this.seimiRenderSettleMs = seimiRenderSettleMs;
+        return this;
     }
 
+    public long getSeimiRenderSettleMs() {
+        return seimiRenderSettleMs;
+    }
+
+    public Request setSeimiRenderOutput(SeimiRenderOutputType seimiRenderOutput) {
+        this.seimiRenderOutput = seimiRenderOutput;
+        return this;
+    }
+
+    public SeimiRenderOutputType getSeimiRenderOutput() {
+        return seimiRenderOutput;
+    }
+
+    // ==================== SeimiAgent 兼容别名（已废弃，请改用 SeimiRender 系列）====================
+
+    /**
+     * 已废弃：请改用 {@link #useSeimiRender()}。委托到渲染后端开关。
+     *
+     * @deprecated 请使用 {@link #useSeimiRender()}
+     */
+    @Deprecated
+    public Request useSeimiAgent() {
+        this.useRenderBackend = true;
+        return this;
+    }
+
+    /**
+     * 已废弃：请改用 {@link #setUseSeimiRender(boolean)}。
+     *
+     * @deprecated 请使用 {@link #setUseSeimiRender(boolean)}
+     */
+    @Deprecated
+    public Request setUseSeimiAgent(boolean useSeimiAgent) {
+        this.useRenderBackend = useSeimiAgent;
+        return this;
+    }
+
+    /**
+     * 已废弃：请改用 {@link #isUseSeimiRender()}。
+     *
+     * @deprecated 请使用 {@link #isUseSeimiRender()}
+     */
+    @Deprecated
+    public boolean isUseSeimiAgent() {
+        return useRenderBackend;
+    }
+
+    /**
+     * 已废弃：请改用 {@link #setSeimiRenderSettleMs(long)}。内部映射到 SeimiRender 的 {@code settle_ms}。
+     *
+     * @deprecated 请使用 {@link #setSeimiRenderSettleMs(long)}
+     */
+    @Deprecated
     public Request setSeimiAgentRenderTime(long seimiAgentRenderTime) {
-        this.seimiAgentRenderTime = seimiAgentRenderTime;
+        this.seimiRenderSettleMs = seimiAgentRenderTime;
         return this;
+    }
+
+    /**
+     * 已废弃：请改用 {@link #getSeimiRenderSettleMs()}。
+     *
+     * @deprecated 请使用 {@link #getSeimiRenderSettleMs()}
+     */
+    @Deprecated
+    public long getSeimiAgentRenderTime() {
+        return seimiRenderSettleMs;
     }
 
     public String getSeimiAgentScript() {
         return seimiAgentScript;
     }
 
+    /**
+     * 已废弃：SeimiRender 不支持 per-request 脚本注入，本字段仅作向后兼容保留，实际不会发送给 SeimiRender。
+     *
+     * @deprecated SeimiRender 暂不支持，设置无效
+     */
+    @Deprecated
     public Request setSeimiAgentScript(String seimiAgentScript) {
         this.seimiAgentScript = seimiAgentScript;
         return this;
@@ -325,18 +410,64 @@ public class Request extends CommonObject {
         return seimiAgentUseCookie;
     }
 
+    /**
+     * 已废弃：SeimiRender 通过浏览器插件 / {@code /cookies} 接口统一同步登录态，不支持 per-request cookie 控制。
+     * 本字段仅作向后兼容保留，实际不会发送给 SeimiRender。
+     *
+     * @deprecated SeimiRender 暂不支持 per-request cookie，设置无效
+     */
+    @Deprecated
     public Request setSeimiAgentUseCookie(Boolean seimiAgentUseCookie) {
         this.seimiAgentUseCookie = seimiAgentUseCookie;
         return this;
     }
 
-    public SeimiAgentContentType getSeimiAgentContentType() {
-        return seimiAgentContentType;
+    /**
+     * 已废弃：请改用 {@link #setSeimiRenderOutput(SeimiRenderOutputType)}。旧枚举值会被映射到对应的 SeimiRender 输出格式。
+     *
+     * @deprecated 请使用 {@link #setSeimiRenderOutput(SeimiRenderOutputType)}
+     */
+    @Deprecated
+    public Request setSeimiAgentContentType(SeimiAgentContentType seimiAgentContentType) {
+        if (seimiAgentContentType == null) {
+            this.seimiRenderOutput = SeimiRenderOutputType.HTML;
+        } else {
+            switch (seimiAgentContentType) {
+                case IMG:
+                    this.seimiRenderOutput = SeimiRenderOutputType.IMG;
+                    break;
+                case PDF:
+                    this.seimiRenderOutput = SeimiRenderOutputType.PDF;
+                    break;
+                case HTML:
+                default:
+                    this.seimiRenderOutput = SeimiRenderOutputType.HTML;
+                    break;
+            }
+        }
+        return this;
     }
 
-    public Request setSeimiAgentContentType(SeimiAgentContentType seimiAgentContentType) {
-        this.seimiAgentContentType = seimiAgentContentType;
-        return this;
+    /**
+     * 已废弃：请改用 {@link #getSeimiRenderOutput()}。
+     *
+     * @deprecated 请使用 {@link #getSeimiRenderOutput()}
+     */
+    @Deprecated
+    public SeimiAgentContentType getSeimiAgentContentType() {
+        if (seimiRenderOutput == null) {
+            return SeimiAgentContentType.HTML;
+        }
+        switch (seimiRenderOutput) {
+            case IMG:
+                return SeimiAgentContentType.IMG;
+            case PDF:
+                return SeimiAgentContentType.PDF;
+            case MARKDOWN:
+            case HTML:
+            default:
+                return SeimiAgentContentType.HTML;
+        }
     }
 
     public Map<String, String> getHeader() {

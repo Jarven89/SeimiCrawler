@@ -17,14 +17,14 @@ public class CrawlerProperties implements Serializable {
     private long bloomFilterExpectedInsertions;
     private double bloomFilterFalseProbability;
     /**
-     * SeimiAgent host address,such as seimi.wanghaomiao.cn or 10.10.121.211
+     * SeimiRender host address, such as seimi.wanghaomiao.cn or 10.10.121.211
      */
-    private String seimiAgentHost;
+    private String seimiRenderHost;
 
     /**
-     * seimiAgent listening port
+     * SeimiRender HTTP listening port (default 8088)
      */
-    private int seimiAgentPort;
+    private int seimiRenderPort;
 
     public boolean isEnabled() {
         return enabled;
@@ -66,20 +66,64 @@ public class CrawlerProperties implements Serializable {
         this.bloomFilterFalseProbability = bloomFilterFalseProbability;
     }
 
+    // ==================== SeimiRender（推荐使用）====================
+
+    public String getSeimiRenderHost() {
+        return seimiRenderHost;
+    }
+
+    public void setSeimiRenderHost(String seimiRenderHost) {
+        this.seimiRenderHost = seimiRenderHost;
+    }
+
+    public int getSeimiRenderPort() {
+        return seimiRenderPort;
+    }
+
+    public void setSeimiRenderPort(int seimiRenderPort) {
+        this.seimiRenderPort = seimiRenderPort;
+    }
+
+    // ==================== SeimiAgent 兼容别名（已废弃，请改用 SeimiRender 系列）====================
+
+    /**
+     * 已废弃：请改用 {@link #getSeimiRenderHost()}。
+     *
+     * @deprecated 请使用 {@link #getSeimiRenderHost()}
+     */
+    @Deprecated
     public String getSeimiAgentHost() {
-        return seimiAgentHost;
+        return seimiRenderHost;
     }
 
+    /**
+     * 已废弃：请改用 {@link #setSeimiRenderHost(String)}。
+     *
+     * @deprecated 请使用 {@link #setSeimiRenderHost(String)}
+     */
+    @Deprecated
     public void setSeimiAgentHost(String seimiAgentHost) {
-        this.seimiAgentHost = seimiAgentHost;
+        this.seimiRenderHost = seimiAgentHost;
     }
 
+    /**
+     * 已废弃：请改用 {@link #getSeimiRenderPort()}。
+     *
+     * @deprecated 请使用 {@link #getSeimiRenderPort()}
+     */
+    @Deprecated
     public int getSeimiAgentPort() {
-        return seimiAgentPort;
+        return seimiRenderPort;
     }
 
+    /**
+     * 已废弃：请改用 {@link #setSeimiRenderPort(int)}。
+     *
+     * @deprecated 请使用 {@link #setSeimiRenderPort(int)}
+     */
+    @Deprecated
     public void setSeimiAgentPort(int seimiAgentPort) {
-        this.seimiAgentPort = seimiAgentPort;
+        this.seimiRenderPort = seimiAgentPort;
     }
 
     @Override

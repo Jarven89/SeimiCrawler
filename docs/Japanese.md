@@ -5,7 +5,7 @@ SeimiCrawler - アジャイルで強力なJavaクローリングフレームワ�
 SeimiCrawlerの目標は、Javaの世界で最も使いやすく実用的なクローリングフレームワークになることです。
 # はじめに #
 
-SeimiCrawlerは、アジャイルで、スタンドアロンでデプロイできる、分散型のJavaクローリングフレームワークです。主な目的は、初心者が高性能かつ高可用性のクローリングシステムを開発する際のハードルを最低限にし、クローリングシステムの開発効率を向上させることです。SeimiCrawlerの世界では、たいていの人がデータ取得のビジネスロジックに集中するだけで、その他のことはSeimiが担当します。設計思想はPythonのクローリングフレームワークScrapyからヒントを得ていますが、Java言語の特徴とSpringの特性を融合させました。さらに、XPathを使用してHTMLを効率的に解析するために、SeimiCrawlerでは[JsoupXpath](http://jsoupxpath.wanghaomiao.cn)（独立した拡張プロジェクト、jsoupに組み込まれていません）がデフォルトのHTML解析器として使用されます。データ抽出作業はすべてXPathを使用して行われますが（もちろん、他の解析器を自由に選択することもできます）。また、[SeimiAgent](https://github.com/zhegexiaohuozi/SeimiAgent)を使用することで、複雑な動的ページのレンダリングと取得の問題を完全に解決します。SpringBootを完全にサポートし、あなたの想像力と創造性を最大限に発揮できるように設計されています。
+SeimiCrawlerは、アジャイルで、スタンドアロンでデプロイできる、分散型のJavaクローリングフレームワークです。主な目的は、初心者が高性能かつ高可用性のクローリングシステムを開発する際のハードルを最低限にし、クローリングシステムの開発効率を向上させることです。SeimiCrawlerの世界では、たいていの人がデータ取得のビジネスロジックに集中するだけで、その他のことはSeimiが担当します。設計思想はPythonのクローリングフレームワークScrapyからヒントを得ていますが、Java言語の特徴とSpringの特性を融合させました。さらに、XPathを使用してHTMLを効率的に解析するために、SeimiCrawlerでは[JsoupXpath](http://jsoupxpath.wanghaomiao.cn)（独立した拡張プロジェクト、jsoupに組み込まれていません）がデフォルトのHTML解析器として使用されます。データ抽出作業はすべてXPathを使用して行われますが（もちろん、他の解析器を自由に選択することもできます）。また、[SeimiRender](https://github.com/zhegexiaohuozi/seimi-render)と組み合わせることで、複雑な動的ページのクローリング問題を完全に解決します。SeimiRenderはSeimiAgentの現代版後継であり、Chromium（QtWebEngine）ベースのウェブレンダリングサービスです。JSを実行してSPAや動的コンテンツを処理し、レンダリング済みのHTML / Markdown / PDF / スクリーンショット / 構造化検索結果を返します。SpringBootを完全にサポートし、あなたの想像力と創造性を最大限に発揮できるように設計されています。
 
 # 必要要件 #
 
@@ -278,33 +278,23 @@ public class Request {
   private boolean skipDuplicateFilter = false;
 
 /**
-* このリクエストに対してSeimiAgentを使用するかどうかを指定する
+* このリクエストでSeimiRenderレンダリングバックエンドを有効にするかどうか
   */
-  private boolean useSeimiAgent = false;
+  private boolean useRenderBackend = false;
   /**
 * カスタムHTTPリクエストヘッダー
   */
   private Map<String,String> header;
 
 /**
-* SeimiAgentのレンダリング時間を定義する、単位はミリ秒
+* SeimiRenderのJS settle待機時間（ミリ秒、loadFinished 後にJS実行を待つ時間）
   */
-  private long seimiAgentRenderTime = 0;
+  private long seimiRenderSettleMs = 0;
 
 /**
-* SeimiAgent上で指定されたJSスクリプトを実行するために使用される
+* SeimiRenderが結果をどの形式で返すか、デフォルトはHTML
   */
-  private String seimiAgentScript;
-
-/**
-* SeimiAgentへのリクエストでcookieを使用するかどうかを指定する
-  */
-  private Boolean seimiAgentUseCookie;
-
-/**
-* SeimiAgentに結果をどのようにレンダリングするかを指示する、デフォルトはHTML
-  */
-  private SeimiAgentContentType seimiAgentContentType = SeimiAgentContentType.HTML;
+  private SeimiRenderOutputType seimiRenderOutput = SeimiRenderOutputType.HTML;
 
 /**
 * カスタムcookieの追加をサポートする
@@ -350,18 +340,18 @@ SeimiCrawlerのデフォルトのUAは`SeimiCrawler/JsoupXpath`です。カス�
 ### 異常リクエストの処理 ###
 リクエストの処理中にエラーが発生した場合、そのリクエストは3回の再試行の機会が与えられます。それでも失敗した場合、システムはcrawlerの`public void handleErrorRequest(Request request)`メソッドを呼び出して、問題のあるリクエストを処理します。デフォルトの実装ではログ記録が行われますが、開発者はこのメソッドをオーバーライドして独自の処理を追加できます。
 
-### SeimiAgentのサポート ###
-SeimiAgentについて詳しく解説します。SeimiAgentに詳しくない方は、まず[SeimiAgentプロジェクトのホームペ〖ジ](http://seimiagent.org/)をご覧ください。簡単に説明すると、SeimiAgentはサーバー上で動作するブラウザエンジンで、QtWebkitに基づいて開発され、標準のHTTPインタフェースを提供しています。複雑な動的ウェブページのレンダリング、スナップショットの取得、監視などの需要に対応しています。ページの処理は標準のブラウザレベルであり、ブラウザ上で取得できる情報をすべて取得することができます。
+### SeimiRender サポート ###
+ここで特筆すべきなのが SeimiRender です。SeimiRender にまだ馴染みがない方は、まず [GitHub の SeimiRender プロジェクト](https://github.com/zhegexiaohuozi/seimi-render) をご覧ください。一言で言えば、SeimiRender は SeimiAgent の現代版後継であり、Chromium（QtWebEngine）ベースのウェブレンダリングサービスで、標準の HTTP API を備えています。URL を投げると実際の Chromium ブラウザがページをレンダリングし（JS を実行し、非同期コンテンツの到着を待機）、レンダリング済みの HTML、PDF、スクリーンショット、Markdown、あるいは構造化検索結果を返します。結果の取得にはロングポーリングや WebSocket プッシュにも対応し、AI エージェント（ZCode / Claude Code / Cursor / Codex）が直接駆動できるよう内蔵の MCP サーバも同梱しています。実際のブラウザでレンダリングするため、ブラウザ上で取得できるものはすべて SeimiRender 経由で取得できます。
 
 #### 基本設定 ####
-seimiCrawlerがSeimiAgentをサポートするようにするには、まずSeimiAgentのサービスアドレスを通知する必要があります。
+SeimiCrawlerからSeimiRenderを利用するには、まずSeimiRenderのサービスアドレス（デフォルトのHTTPポートは8088）を指定します。
 
 ##### 直接実行 #####
-`SeimiConfig`を設定することで行います。例えば、
+`SeimiConfig`を設定します。例：
 
 ```
 SeimiConfig config = new SeimiConfig();
-config.setSeimiAgentHost("127.0.0.1");
+config.setSeimiRenderHost("127.0.0.1");
 Seimi s = new Seimi(config);
 s.goRun("basic");
 
@@ -372,20 +362,20 @@ s.goRun("basic");
 
 
 ```
-seimi.crawler.seimi-agent-host=xx
-seimi.crawler.seimi-agent-port=xx
+seimi.crawler.seimi-render-host=xx
+seimi.crawler.seimi-render-port=8088
 ```
 
 #### 使用 ####
-どのリクエストをSeimiAgentに提出するかを決定し、SeimiAgentがどのように処理するかを指定します。これはRequestレベルです。
-- `Request.useSeimiAgent()`
-  SeimiCrawlerにこのリクエストをSeimiAgentに提出することを伝えます。
-- `Request.setSeimiAgentRenderTime(long seimiAgentRenderTime)`
-  SeimiAgentのレンダリング時間を設定します（すべてのリソースがロードされた後、SeimiAgentにどのくらいの時間を割り当てるか、JavaScriptなどのスクリプトを実行して最終的なページをレンダリングするために）。時間の単位はミリ秒です。
-- `Request.setSeimiAgentUseCookie(Boolean seimiAgentUseCookie)`
-  SeimiAgentにcookieを使用するかどうかを伝えます。ここで設定されていない場合、seimiCrawlerのグローバルなcookie設定を使用します。
-- その他の注意事項
-  あなたのクローラーにプロキシが設定されている場合、このリクエストがSeimiAgentに転送されるときに、seimiCrawlerは自動的にSeimiAgentにこのプロキシを使用させます。
+どのリクエストをSeimiRenderに送るか、そしてSeimiRenderにどのように処理させるかを指定します。これはRequestレベルで行います。
+- `Request.useSeimiRender()`
+  SeimiCrawlerに対し、このリクエストをSeimiRenderにブラウザレンダリングさせるよう指示します。
+- `Request.setSeimiRenderSettleMs(long seimiRenderSettleMs)`
+  SeimiRenderのJS settle時間（ページ読み込み完了後にJSを実行し、非同期コンテンツが完全にレンダリングされるまで待つミリ秒、範囲 0–30000）を設定します。省略時は SeimiRender の既定値（2000ms）が使われます。
+- `Request.setSeimiRenderOutput(SeimiRenderOutputType)`
+  返却形式を指定します。`HTML`（既定）/ `MARKDOWN` / `PDF` / `IMG`（スクリーンショット）。`HTML`・`MARKDOWN` の場合はレンダリング結果がそのまま `Response` に入り、XPath で通常通りパースできます。
+- ログイン状態とプロキシについての注意
+  SeimiRenderはリクエスト単位のスクリプト注入やcookie制御をサポートしません。ログインが必要なページは、SeimiRenderのブラウザ拡張機能または `POST /cookies` エンドポイントで一度ログインcookieを同期すれば、Chromiumが自動的にログイン状態を引き継ぎます。プロキシはSeimiRenderの `--proxy` 起動オプションまたは実行時 `POST /proxy` でサービスレベルで設定します。
 - デモ
   実際の使用方法については、[リポジトリ内のデモ](https://github.com/zhegexiaohuozi/SeimiCrawler/blob/master/standalone-example/src/main/java/cn/wanghaomiao/crawlers/SeimiAgentDemo.java)を参照してください。
 
@@ -413,12 +403,12 @@ public class SeimiCrawlerApplication {
 
 #### 直接実行、独立起動 ####
 
-main関数を追加し、独立した起動クラスを作成します。デモプロジェクトのようにします。main関数で`Seimi`オブジェクトを初期化し、`SeimiConfig`を介して特定のパラメータを設定できます。例如、分散キューに使用するRedisクラスタの情報、seimiAgentのホスト情報の設定などです。ただし、`SeimiConfig`はオプションです。例：
+main関数を追加し、独立した起動クラスを作成します。デモプロジェクトのようにします。main関数で`Seimi`オブジェクトを初期化し、`SeimiConfig`を介して特定のパラメータを設定できます。例えば、分散キューに使用するRedisクラスタの情報、SeimiRenderのホスト情報の設定などです。ただし、`SeimiConfig`はオプションです。例：
 ```
 public class Boot {
     public static void main(String[] args){
         SeimiConfig config = new SeimiConfig();
-//        config.setSeimiAgentHost("127.0.0.1");
+//        config.setSeimiRenderHost("127.0.0.1");
 //        config.redisSingleServer().setAddress("redis://127.0.0.1:6379");
         Seimi s = new Seimi(config);
         s.goRun("basic");
@@ -634,7 +624,7 @@ seimi-app.xmlでredissonを設定します。2.0版以降、デフォルトの�
 
 ```
 SeimiConfig config = new SeimiConfig();
-config.setSeimiAgentHost("127.0.0.1");
+config.setSeimiRenderHost("127.0.0.1");
 config.redisSingleServer().setAddress("redis://127.0.0.1:6379");
 Seimi s = new Seimi(config);
 s.goRun("basic");
