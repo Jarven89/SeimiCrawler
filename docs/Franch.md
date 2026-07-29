@@ -5,7 +5,7 @@ Un cadre le système crawler agil, puissant, autonome et distribué.
 L'objectif de SeimiCrawler est de devenir le cadre le système crawler le plus utile et pratique dans le monde Java.
 # Introduction #
 
-SeimiCrawler est un cadre le système crawler agile, déployable de manière autonome et supportant le déploiement distribué en Java. L'objectif est de réduire au maximum le seuil d'entrée pour les nouveaux développeurs afin qu'ils puissent créer un système de爬虫 performant et utilisable, tout en améliorant l'efficacité de développement de ces systèmes. Dans l'univers de SeimiCrawler, la plupart des utilisateurs n'ont besoin de se concentrer que sur la logique d'achat. Tout le reste est géré par Seimi. L'architecture de SeimiCrawler a été inspirée par le cadre de爬虫 Python, Scrapy, et a fusionné les caractéristiques propres au langage Java ainsi que les caractéristiques de Spring. Il vise à rendre l'utilisation plus efficace et plus répandue de XPath pour analyser HTML en Chine, c'est pourquoi l'analyseur HTML par défaut de SeimiCrawler est [JsoupXpath](http://jsoupxpath.wanghaomiao.cn) (un projet d'extension indépendant, non inclus dans jsoup par défaut). Par défaut, toutes les opérations d'analyse et d'extraction de données HTML utilisent XPath (bien sûr, d'autres analyseurs peuvent également être choisis pour le traitement des données). En combinaison avec [SeimiAgent](https://github.com/zhegexiaohuozi/SeimiAgent), il résout parfaitement le problème de rendu de pages dynamiques complexes. Il supporte parfaitement SpringBoot, permettant une utilisation maximale de l'imagination et de la créativité.
+SeimiCrawler est un cadre le système crawler agile, déployable de manière autonome et supportant le déploiement distribué en Java. L'objectif est de réduire au maximum le seuil d'entrée pour les nouveaux développeurs afin qu'ils puissent créer un système de爬虫 performant et utilisable, tout en améliorant l'efficacité de développement de ces systèmes. Dans l'univers de SeimiCrawler, la plupart des utilisateurs n'ont besoin de se concentrer que sur la logique d'achat. Tout le reste est géré par Seimi. L'architecture de SeimiCrawler a été inspirée par le cadre de爬虫 Python, Scrapy, et a fusionné les caractéristiques propres au langage Java ainsi que les caractéristiques de Spring. Il vise à rendre l'utilisation plus efficace et plus répandue de XPath pour analyser HTML en Chine, c'est pourquoi l'analyseur HTML par défaut de SeimiCrawler est [JsoupXpath](http://jsoupxpath.wanghaomiao.cn) (un projet d'extension indépendant, non inclus dans jsoup par défaut). Par défaut, toutes les opérations d'analyse et d'extraction de données HTML utilisent XPath (bien sûr, d'autres analyseurs peuvent également être choisis pour le traitement des données). En combinaison avec [SeimiRender](https://github.com/zhegexiaohuozi/seimi-render) — le successeur moderne de SeimiAgent, un service de rendu web basé sur Chromium (QtWebEngine) qui exécute le JavaScript, gère les SPA et les contenus dynamiques, et renvoie le HTML / Markdown / PDF / capture d'écran / résultats de recherche structurés rendus — il résout parfaitement le problème du crawling de pages dynamiques complexes. Il supporte parfaitement SpringBoot, permettant une utilisation maximale de l'imagination et de la créativité.
 
 # Exigences #
 
@@ -275,33 +275,23 @@ public class Request {
   private boolean skipDuplicateFilter = false;
 
 /**
-* Indique si SeimiAgent doit être activé pour cette demande
+* Active ou non le backend de rendu SeimiRender pour cette requête
   */
-  private boolean useSeimiAgent = false;
+  private boolean useRenderBackend = false;
   /**
 * En-têtes de protocole HTTP personnalisées
   */
   private Map<String, String> header;
 
 /**
-* Définit le temps de rendu de SeimiAgent, en millisecondes
+* Temps d'attente JS settle pour SeimiRender, en millisecondes (durée d'attente de l'exécution du JS après loadFinished)
   */
-  private long seimiAgentRenderTime = 0;
+  private long seimiRenderSettleMs = 0;
 
 /**
-* Utilisé pour exécuter des scripts JavaScript spécifiés sur SeimiAgent
+* Format dans lequel SeimiRender renvoie le résultat rendu, HTML par défaut
   */
-  private String seimiAgentScript;
-
-/**
-* Indique si les demandes soumises à SeimiAgent doivent utiliser des cookies
-  */
-  private Boolean seimiAgentUseCookie;
-
-/**
-* Indique à SeimiAgent le format dans lequel les résultats doivent être rendus, par défaut HTML
-  */
-  private SeimiAgentContentType seimiAgentContentType = SeimiAgentContentType.HTML;
+  private SeimiRenderOutputType seimiRenderOutput = SeimiRenderOutputType.HTML;
 
 /**
 * Permet d'ajouter des cookies personnalisés
@@ -347,18 +337,18 @@ Actuellement, SeimiCrawler supporte les redirections 301, 302 et les redirection
 ### Gestion des requêtes en erreur ###
 Si une requête génère une erreur lors de son traitement, elle a trois chances d'être reprise dans la file d'attente de traitement. Si elle échoue finalement, le système appelle la méthode `public void handleErrorRequest(Request request)` du crawler pour gérer cette requête. Par défaut, cette méthode enregistre l'erreur dans les logs, mais les développeurs peuvent surcharger cette méthode pour implémenter leur propre gestion des erreurs.
 
-### Support de SeimiAgent ###
-Il est important de souligner ce point. Les étudiants qui ne connaissent pas encore SeimiAgent peuvent consulter la [page d'accueil du projet SeimiAgent](http://seimiagent.org/). En résumé, SeimiAgent est un noyau de navigateur qui s'exécute sur le serveur, développé à partir de QtWebkit, et qui propose des services via une interface HTTP standard. Il est spécialement conçu pour résoudre des problèmes complexes liés au rendu de pages web dynamiques, à la capture de snapshots, et à la surveillance. En termes simples, le traitement des pages par SeimiAgent est au niveau d'un navigateur standard, vous pouvez obtenir toutes les informations que vous pourriez obtenir avec un navigateur.
+### Prise en charge de SeimiRender ###
+Une mention particulière s'impose ici. Ceux qui ne connaissent pas encore SeimiRender peuvent consulter le [projet SeimiRender sur GitHub](https://github.com/zhegexiaohuozi/seimi-render). En résumé, SeimiRender est le successeur moderne de SeimiAgent : un service de rendu web bâti sur Chromium (QtWebEngine) qui expose une API HTTP standard. Vous soumettez une URL, un véritable navigateur Chromium effectue le rendu de la page (exécute le JavaScript, attend le contenu asynchrone), puis renvoie le HTML, le PDF, la capture d'écran, le Markdown ou les résultats de recherche structurés complets. Il prend en charge le long-polling et la poussée WebSocket pour récupérer les résultats, et embarque un serveur MCP intégré afin que les agents IA (ZCode / Claude Code / Cursor / Codex) puissent le piloter directement. En clair, le rendu étant assuré par un véritable navigateur, tout ce que vous pouvez obtenir dans un navigateur, vous pouvez l'obtenir via SeimiRender.
 
 #### Configuration de base ####
-Pour que SeimiCrawler puisse utiliser SeimiAgent, il faut d'abord configurer l'adresse du service SeimiAgent.
+Pour que SeimiCrawler puisse utiliser SeimiRender, il faut d'abord lui indiquer l'adresse du service SeimiRender (port HTTP par défaut 8088).
 
 ##### Exécution directe #####
 Via la configuration `SeimiConfig`, par exemple :
 
 ```
 SeimiConfig config = new SeimiConfig();
-config.setSeimiAgentHost("127.0.0.1");
+config.setSeimiRenderHost("127.0.0.1");
 Seimi s = new Seimi(config);
 s.goRun("basic");
 
@@ -369,20 +359,20 @@ Dans le fichier `application.properties` :
 
 
 ```
-seimi.crawler.seimi-agent-host=xx
-seimi.crawler.seimi-agent-port=xx
+seimi.crawler.seimi-render-host=xx
+seimi.crawler.seimi-render-port=8088
 ```
 
 #### Utilisation ####
-Décider quels requêtes soumettre à SeimiAgent pour leur traitement et spécifier comment SeimiAgent doit les traiter. C'est au niveau de la requête.
-- `Request.useSeimiAgent()`
-  Indique à SeimiCrawler que cette requête doit être soumise à SeimiAgent.
-- `Request.setSeimiAgentRenderTime(long seimiAgentRenderTime)`
-  Définit le temps de rendu de SeimiAgent (temps accordé à SeimiAgent pour exécuter les scripts JavaScript et d'autres ressources après que toutes les ressources aient été chargées), l'unité de temps est en millisecondes.
-- `Request.setSeimiAgentUseCookie(Boolean seimiAgentUseCookie)`
-  Indique à SeimiAgent s'il doit utiliser des cookies. Si ce paramètre n'est pas défini, le paramètre de cookie global de seimiCrawler est utilisé.
-- Autres
-  Si votre Crawler utilise un proxy, seimiCrawler l'utilisera également automatiquement lorsque cette requête sera transférée à SeimiAgent.
+Décidez quelles requêtes soumettre à SeimiRender pour leur traitement et précisez comment SeimiRender doit les traiter. Cela se configure au niveau de la requête.
+- `Request.useSeimiRender()`
+  Indique à SeimiCrawler de soumettre cette requête à SeimiRender pour un rendu navigateur.
+- `Request.setSeimiRenderSettleMs(long seimiRenderSettleMs)`
+  Définit le temps JS settle de SeimiRender (combien de millisecondes attendre l'exécution du JavaScript après la fin du chargement de la page pour que le contenu asynchrone soit entièrement rendu ; plage 0–30000). Si non défini, SeimiRender utilise sa valeur par défaut (2000 ms).
+- `Request.setSeimiRenderOutput(SeimiRenderOutputType)`
+  Indique à SeimiRender le format de retour : `HTML` (par défaut), `MARKDOWN`, `PDF` ou `IMG` (capture d'écran). Pour `HTML`/`MARKDOWN`, le résultat du rendu est placé directement dans `Response` et peut être analysé avec XPath comme d'habitude.
+- Remarque sur l'état de connexion et le proxy
+  SeimiRender ne prend pas en charge l'injection de scripts ou le contrôle des cookies par requête. Pour les pages derrière une connexion, synchronisez une fois les cookies de session via l'extension navigateur de SeimiRender ou son endpoint `POST /cookies` — Chromium portera ensuite automatiquement l'état de connexion. Pour le proxy, configurez-le au niveau du service via le drapeau de démarrage `--proxy` de SeimiRender ou le remplacement à chaud `POST /proxy` à l'exécution.
 - Démonstration
   Pour une utilisation pratique, vous pouvez vous référer au [démonstration dans le dépôt](https://github.com/zhegexiaohuozi/SeimiCrawler/blob/master/standalone-example/src/main/java/cn/wanghaomiao/crawlers/SeimiAgentDemo.java)
 
@@ -410,12 +400,12 @@ public class SeimiCrawlerApplication {
 
 #### Exécution directe, démarrage indépendant ####
 
-Ajoutez une fonction main dans une classe de démarrage indépendante, comme dans l'exemple du projet. Dans la fonction main, initialisez l'objet `Seimi` et vous pouvez configurer certains paramètres spécifiques via `SeimiConfig`, tels que les informations de cluster Redis nécessaires pour la file d'attente distribuée, ou les informations host de seimiAgent si nécessaire. `SeimiConfig` est optionnel. Par exemple :
+Ajoutez une fonction main dans une classe de démarrage indépendante, comme dans l'exemple du projet. Dans la fonction main, initialisez l'objet `Seimi` et vous pouvez configurer certains paramètres spécifiques via `SeimiConfig`, tels que les informations de cluster Redis nécessaires pour la file d'attente distribuée, ou l'hôte de SeimiRender si nécessaire. `SeimiConfig` est optionnel. Par exemple :
 ```
 public class Boot {
     public static void main(String[] args){
         SeimiConfig config = new SeimiConfig();
-//        config.setSeimiAgentHost("127.0.0.1");
+//        config.setSeimiRenderHost("127.0.0.1");
 //        config.redisSingleServer().setAddress("redis://127.0.0.1:6379");
         Seimi s = new Seimi(config);
         s.goRun("basic");
@@ -579,7 +569,7 @@ Définissez l'annotation du Crawler comme `@Crawler(name = "xx", queue = Default
 
 ```
 SeimiConfig config = new SeimiConfig();
-config.setSeimiAgentHost("127.0.0.1");
+config.setSeimiRenderHost("127.0.0.1");
 config.redisSingleServer().setAddress("redis://127.0.0.1:6379");
 Seimi s = new Seimi(config);
 s.goRun("basic");

@@ -27,10 +27,12 @@ import cn.wanghaomiao.seimi.struct.Response;
 import cn.wanghaomiao.seimi.utils.ClazzUtils;
 import cn.wanghaomiao.seimi.utils.StructValidator;
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONObject;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -105,10 +107,37 @@ public class SeimiProcessor implements Runnable {
                 }
 
                 Response seimiResponse = downloader.process(request);
+                // SeimiRender 的 /render 返回 JSON（{state,html,markdown,...}），需将渲染产物从 JSON 中解出，
+                // 否则后续基于 XPath 的回调会拿到 JSON 而非真实页面内容。
+                if (request.isUseSeimiRender() && StringUtils.isNotBlank(seimiResponse.getContent()) && BodyType.TEXT.equals(seimiResponse.getBodyType())) {
+                    try {
+                        JSONObject renderResult = JSON.parseObject(seimiResponse.getContent());
+                        if (renderResult != null) {
+                            String state = renderResult.getString("state");
+                            if ("failed".equalsIgnoreCase(state)) {
+                                // 渲染失败：保留原始 JSON 以便排错，并记录 error 信息
+                                logger.error("SeimiRender render failed, url={}, task_id={}, error={}",
+                                        request.getUrl(), renderResult.getString("task_id"), renderResult.getString("error"));
+                            } else {
+                                // succeeded / running：优先取 html，其次 markdown；都没有则保持原样
+                                String html = renderResult.getString("html");
+                                if (StringUtils.isBlank(html)) {
+                                    html = renderResult.getString("markdown");
+                                }
+                                if (StringUtils.isNotBlank(html)) {
+                                    seimiResponse.setContent(html);
+                                }
+                            }
+                        }
+                    } catch (Exception e) {
+                        // 非 JSON 响应（兼容某些异常场景）时保持原内容不变，仅记录 debug
+                        logger.debug("SeimiRender response is not valid JSON, keep raw content, url={}", request.getUrl());
+                    }
+                }
                 if (StringUtils.isNotBlank(seimiResponse.getContent()) && BodyType.TEXT.equals(seimiResponse.getBodyType())) {
                     Matcher mm = metaRefresh.matcher(seimiResponse.getContent());
                     int refreshCount = 0;
-                    while (!request.isUseSeimiAgent() && mm.find() && refreshCount < 3) {
+                    while (!request.isUseSeimiRender() && mm.find() && refreshCount < 3) {
                         String nextUrl = mm.group(1).replaceAll("'", "");
                         seimiResponse = downloader.metaRefresh(nextUrl);
                         mm = metaRefresh.matcher(seimiResponse.getContent());
@@ -137,6 +166,32 @@ public class SeimiProcessor implements Runnable {
 
             }
         }
+    }
+
+    private String resolveLambdaCallbackName(Request request, Request.SeimiCallbackFunc<?, ?> callback) {
+        // 优先通过 SerializedLambda 解析，可获取完整的 类::方法 格式
+        try {
+            Method writeReplace = callback.getClass().getDeclaredMethod("writeReplace");
+            writeReplace.setAccessible(true);
+            SerializedLambda serializedLambda = (SerializedLambda) writeReplace.invoke(callback);
+            String implMethodName = serializedLambda.getImplMethodName();
+            // getImplClass() 返回内部斜杠格式，某些 JDK 版本对方法引用可能为空，此时回退到 capturingClass
+            String implClass = serializedLambda.getImplClass();
+            if (implClass == null || implClass.isEmpty()) {
+                implClass = serializedLambda.getCapturingClass().replace('/', '.');
+            } else {
+                implClass = implClass.replace('/', '.');
+            }
+            return implClass + "::" + implMethodName;
+        } catch (Exception e) {
+            logger.debug("Failed to resolve lambda callback name via SerializedLambda: {}", e.getMessage());
+        }
+        // 降级：尝试使用 request 中保存的回调方法名
+        String methodName = request.getCallBack();
+        if (methodName != null && !methodName.isEmpty()) {
+            return methodName;
+        }
+        return callback.toString();
     }
 
     private void doCallback(Request request, Response seimiResponse) throws Exception {
@@ -171,6 +226,7 @@ public class SeimiProcessor implements Runnable {
             logger.info("can not find callback function");
             return;
         }
+        logger.debug("Request URL: {}, Callback: {}", request.getUrl(), resolveLambdaCallbackName(request, requestCallback));
         for (SeimiInterceptor interceptor : interceptors) {
             Interceptor interAnno = interceptor.getClass().getAnnotation(Interceptor.class);
             if (interAnno.everyMethod()) {

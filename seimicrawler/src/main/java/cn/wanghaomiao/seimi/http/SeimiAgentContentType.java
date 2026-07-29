@@ -17,9 +17,15 @@ package cn.wanghaomiao.seimi.http;
 
 /**
  * 用于指定SeimiAgent处理请求返回的内容的数据格式
+ * <p>
+ * 已废弃：SeimiCrawler 现已适配 {@link SeimiRenderOutputType}（SeimiAgent 的现代化升级版 SeimiRender）。
+ * 请改用 {@link SeimiRenderOutputType}。本枚举仅作向后兼容保留，取值会被自动映射到对应的 SeimiRender 输出格式。
+ *
  * @author SeimiMaster seimimaster@gmail.com
  * @since 2016/6/26.
+ * @deprecated 请使用 {@link SeimiRenderOutputType}
  */
+@Deprecated
 public enum SeimiAgentContentType {
     /**
      * 向SeimiAgent请求返回内容为HTML

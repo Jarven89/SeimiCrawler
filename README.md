@@ -19,7 +19,7 @@ Read detail in [English](docs/English.md) | [日本語](docs/Japanese.md) | [한
 
 # 简介 #
 
-SeimiCrawler是一个敏捷的，独立部署的，支持分布式的Java爬虫框架，希望能在最大程度上降低新手开发一个可用性高且性能不差的爬虫系统的门槛，以及提升开发爬虫系统的开发效率。在SeimiCrawler的世界里，绝大多数人只需关心去写抓取的业务逻辑就够了，其余的Seimi帮你搞定。设计思想上SeimiCrawler受Python的爬虫框架Scrapy启发，同时融合了Java语言本身特点与Spring的特性，并希望在国内更方便且普遍的使用更有效率的XPath解析HTML，所以SeimiCrawler默认的HTML解析器是[JsoupXpath](http://jsoupxpath.wanghaomiao.cn)(独立扩展项目，非jsoup自带),默认解析提取HTML数据工作均使用XPath来完成（当然，数据处理亦可以自行选择其他解析器）。并结合[SeimiAgent](https://github.com/zhegexiaohuozi/SeimiAgent)彻底完美解决复杂动态页面渲染抓取问题。
+SeimiCrawler是一个敏捷的，独立部署的，支持分布式的Java爬虫框架，希望能在最大程度上降低新手开发一个可用性高且性能不差的爬虫系统的门槛，以及提升开发爬虫系统的开发效率。在SeimiCrawler的世界里，绝大多数人只需关心去写抓取的业务逻辑就够了，其余的Seimi帮你搞定。设计思想上SeimiCrawler受Python的爬虫框架Scrapy启发，同时融合了Java语言本身特点与Spring的特性，并希望在国内更方便且普遍的使用更有效率的XPath解析HTML，所以SeimiCrawler默认的HTML解析器是[JsoupXpath](http://jsoupxpath.wanghaomiao.cn)(独立扩展项目，非jsoup自带),默认解析提取HTML数据工作均使用XPath来完成（当然，数据处理亦可以自行选择其他解析器）。并结合[SeimiRender](https://github.com/zhegexiaohuozi/seimi-render)（SeimiAgent 的现代化升级版，基于 Chromium 的网页渲染服务，支持 JS 渲染、SPA、动态内容，内置 MCP 协议可接入各类 AI Agent）彻底完美解决复杂动态页面渲染抓取问题。
 
 # 最新进展、资讯订阅 #
 
@@ -40,11 +40,11 @@ SeimiCrawler是一个敏捷的，独立部署的，支持分布式的Java爬虫�
 
 ```
 
-- 非SpringBoot模式全局配置项通过`SeimiConfig`进行配置，包括 Redis集群信息，SeimiAgent信息等，SpringBoot模式则通过SpringBoot标准模式配置
+- 非SpringBoot模式全局配置项通过`SeimiConfig`进行配置，包括 Redis集群信息，SeimiRender信息等，SpringBoot模式则通过SpringBoot标准模式配置
 
 ```
 SeimiConfig config = new SeimiConfig();
-config.setSeimiAgentHost("127.0.0.1");
+config.setSeimiRenderHost("127.0.0.1");
 //config.redisSingleServer().setAddress("redis://127.0.0.1:6379");
 Seimi s = new Seimi(config);
 s.goRun("basic");
@@ -57,8 +57,8 @@ seimi.crawler.enabled=true
 # 指定要发起start请求的crawler的name
 seimi.crawler.names=basic,test
 
-seimi.crawler.seimi-agent-host=xx
-seimi.crawler.seimi-agent-port=xx
+seimi.crawler.seimi-render-host=xx
+seimi.crawler.seimi-render-port=xx
 
 #开启分布式队列
 seimi.crawler.enable-redisson-queue=true
@@ -96,7 +96,7 @@ seimi.crawler.enable-redisson-queue=true
 <dependency>
     <groupId>cn.wanghaomiao</groupId>
     <artifactId>SeimiCrawler</artifactId>
-    <version>2.1.4</version>
+    <version>2.1.5</version>
 </dependency>
 ```
 

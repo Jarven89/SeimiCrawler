@@ -5,7 +5,7 @@ SeimiCrawler: 민첩하고 강력한 Java 크롤링 프레임워크
 SeimiCrawler의 목표는 Java 세계에서 가장 쉽고 실용적인 크롤링 프레임워크가 되는 것입니다.
 # 소개 #
 
-SeimiCrawler는 민첩하고, 독립적으로 배포할 수 있으며, 분산 처리를 지원하는 Java 크롤링 프레임워크로서, 초보자가 성능이 좋은 크롤링 시스템을 쉽게 개발하고, 크롤링 시스템의 개발 효율을 높이는 것을 목표로 합니다. SeimiCrawler의 세계에서 대부분의 사용자는 주로 크롤링 로직에 집중하면 되며, 나머지는 Seimi가 모두 해결해줍니다. SeimiCrawler는 Python의 크롤링 프레임워크인 Scrapy에서 영감을 얻었지만, Java 언어의 특성과 Spring의 특성을 결합하여, XPath를 사용하여 HTML을 분석하는 것이 더욱 효율적이게 만들었습니다. 따라서 SeimiCrawler의 기본 HTML 분석기는 [JsoupXpath](http://jsoupxpath.wanghaomiao.cn) (독립된 확장 프로젝트, Jsoup에 포함되지 않음)이며, 기본적으로 HTML 데이터 추출은 XPath를 사용합니다 (물론, 데이터 처리는 다른 분석기를 선택할 수도 있습니다). [SeimiAgent](https://github.com/zhegexiaohuozi/SeimiAgent)를 통해 복잡한 동적 페이지 렌더링 크롤링 문제를 완벽하게 해결할 수 있으며, SpringBoot를 완벽히 지원하여 사용자의 창의력과 상상력을 극대화합니다.
+SeimiCrawler는 민첩하고, 독립적으로 배포할 수 있으며, 분산 처리를 지원하는 Java 크롤링 프레임워크로서, 초보자가 성능이 좋은 크롤링 시스템을 쉽게 개발하고, 크롤링 시스템의 개발 효율을 높이는 것을 목표로 합니다. SeimiCrawler의 세계에서 대부분의 사용자는 주로 크롤링 로직에 집중하면 되며, 나머지는 Seimi가 모두 해결해줍니다. SeimiCrawler는 Python의 크롤링 프레임워크인 Scrapy에서 영감을 얻었지만, Java 언어의 특성과 Spring의 특성을 결합하여, XPath를 사용하여 HTML을 분석하는 것이 더욱 효율적이게 만들었습니다. 따라서 SeimiCrawler의 기본 HTML 분석기는 [JsoupXpath](http://jsoupxpath.wanghaomiao.cn) (독립된 확장 프로젝트, Jsoup에 포함되지 않음)이며, 기본적으로 HTML 데이터 추출은 XPath를 사용합니다 (물론, 데이터 처리는 다른 분석기를 선택할 수도 있습니다). 그리고 [SeimiRender](https://github.com/zhegexiaohuozi/seimi-render) — SeimiAgent의 현대적 후속작으로, Chromium(QtWebEngine) 기반의 웹 렌더링 서비스입니다. JS를 실행하고 SPA 및 동적 콘텐츠를 처리하며, 렌더링된 HTML / Markdown / PDF / 스크린샷 / 구조화 검색 결과를 반환합니다 — 와 결합하여 복잡한 동적 페이지 렌더링 크롤링 문제를 완벽하게 해결할 수 있으며, SpringBoot를 완벽히 지원하여 사용자의 창의력과 상상력을 극대화합니다.
 
 # 요구 사항 #
 
@@ -180,7 +180,7 @@ public class Boot {
 
 ### Response 데이터 추출 ###
 - 텍스트 결과
-  Seimi는 기본적으로 HTML 데이터 추출을 위해 XPath를 사용하는 것을 권장합니다.XPath의 초기 학습 과정은 어렵지만, 이를 배운 후의 개발 효율성과 비교하면 그 비용은 매우 적습니다. `JXDocument doc = response.document();`로 `JXDocument` (JsoupXpath의 문서 객체)를 가져올 수 있으며, 이후 `doc.sel("xpath")`를 통해 원하는 모든 데이터를 추출할 수 있습니다.通行证任何数据应该都是一条XPath语句就能搞定了。想对Seimi使用的XPath语法解析器以及想对XPath进一步了解的同学请移步[JsoupXpath](http://jsoupxpath.wanghaomiao.cn)。当然，实在对XPath提不起感觉的话，那么response里有原声的请求结果数据，您可自行选择其他数据解析器进行处理。
+  Seimi는 기본적으로 HTML 데이터 추출을 위해 XPath를 사용하는 것을 권장합니다.XPath의 초기 학습 과정은 어렵지만, 이를 배운 후의 개발 효율성과 비교하면 그 비용은 매우 적습니다. `JXDocument doc = response.document();`로 `JXDocument` (JsoupXpath의 문서 객체)를 가져올 수 있으며, 이후 `doc.sel("xpath")`를 통해 원하는 모든 데이터를 추출할 수 있습니다. 일반적으로 어떤 데이터든 단 한 줄의 XPath 표현식으로 추출할 수 있습니다. Seimi가 사용하는 XPath 문법 파서에 대해 더 알고 싶거나 XPath 자체를 더 깊이 이해하고 싶다면 [JsoupXpath](http://jsoupxpath.wanghaomiao.cn)를 참고하세요. 물론, XPath가 도저히 손에 익지 않는다면 response에 들어 있는 원시 요청 결과 데이터를 이용해 원하는 다른 데이터 파서를 선택해 처리할 수도 있습니다.
 - 파일 결과
   파일 형태의 반환 결과일 경우, `response.saveTo(File targetFile)`를 사용하여 저장하거나, 파일 바이트 스트림 `byte[] getData()`를 얻어 다른 작업을 수행할 수 있습니다.
 
@@ -281,33 +281,23 @@ public class Request {
   private boolean skipDuplicateFilter = false;
 
 /**
-* 해당 요청에 대해 SeimiAgent를 사용하도록 지정하는 용도
+* 이 요청에 대해 SeimiRender 렌더링 백엔드 활성화 여부
   */
-  private boolean useSeimiAgent = false;
+  private boolean useRenderBackend = false;
   /**
 * 사용자 정의 Http 요청 프로토콜 헤더
   */
   private Map<String, String> header;
 
 /**
-* SeimiAgent의 렌더링 시간을 정의, 단위는 밀리초
+* SeimiRender의 JS settle 대기 시간(밀리초, loadFinished 이후 JS 실행을 기다리는 시간)
   */
-  private long seimiAgentRenderTime = 0;
+  private long seimiRenderSettleMs = 0;
 
 /**
-* SeimiAgent에서 지정된 js 스크립트를 실행하도록 지원
+* SeimiRender가 결과를 반환할 형식, 기본 HTML
   */
-  private String seimiAgentScript;
-
-/**
-* SeimiAgent에 제출되는 요청이 쿠키를 사용하도록 지정
-  */
-  private Boolean seimiAgentUseCookie;
-
-/**
-* SeimiAgent가 결과를 어떤 형식으로 렌더링할 것인지 지정, 기본값은 HTML
-  */
-  private SeimiAgentContentType seimiAgentContentType = SeimiAgentContentType.HTML;
+  private SeimiRenderOutputType seimiRenderOutput = SeimiRenderOutputType.HTML;
 
 /**
 * 사용자 정의 쿠키 추가를 지원
@@ -348,54 +338,45 @@ SeimiCrawler의 기본 UA는 `SeimiCrawler/JsoupXpath`입니다. 사용자 정�
 `@Crawler` 주석의 `useUnrepeated` 속성을 사용하여 시스템 중복 제거를 활성화할 수 있으며, 기본적으로 활성화되어 있습니다.
 
 ### 자동 리다이렉트에 대한 정보 ###
-현재 SeimiCrawler는 301, 302,以及meta refresh 리다이렉트를 지원합니다. 이러한 리다이렉트 URL은 `Response` 객체의 `getRealUrl()`을 통해 실제 리다이렉트 후의 연결을 얻을 수 있습니다.
+현재 SeimiCrawler는 301, 302, 그리고 meta refresh 리다이렉트를 지원합니다. 이러한 리다이렉트 URL은 `Response` 객체의 `getRealUrl()`을 통해 실제 리다이렉트 후의 연결을 얻을 수 있습니다.
 
 ### 예외 요청 처리 ###
 리퀘스트가 처리 중에 예외가 발생하면, 세 번의 기회를 통해 처리 큐에 다시 넣어 재처리됩니다. 그러나 최종적으로 실패하면, 시스템은 crawler의 `public void handleErrorRequest(Request request)` 메소드를 호출하여 문제 있는 요청을 처리합니다. 기본 구현은 로그로 기록하지만, 개발자는 이 메소드를 오버라이드하여 자체 처리를 추가할 수 있습니다.
 
-### SeimiAgent 지원 ###
-이 부분은 특히 강조해야 합니다. SeimiAgent에 대해 잘 모르는 분들은 [SeimiAgent 프로젝트 페이지](http://seimiagent.org/)를 먼저 참조하세요. 간단히 말해서, SeimiAgent는 서버에서 실행되는 브라우저 엔진으로, QtWebkit 기반으로 개발되어 표준 HTTP 인터페이스를 통해 서비스를 제공합니다. 복잡한 동적 웹페이지의 렌더링, 스크린샷 캡처, 모니터링 등의 요구를专门为解决而设计的。总之，它对页面的处理是标准浏览器级别的，你可以基于它获取任何在浏览器中可以获取的信息。
+### SeimiRender 지원 ###
+이 부분은 특별히 짚고 넘어가야 합니다. SeimiRender에 대해 아직 익숙하지 않다면 먼저 [GitHub의 SeimiRender 프로젝트](https://github.com/zhegexiaohuozi/seimi-render)를 살펴보세요. 간단히 말해, SeimiRender는 SeimiAgent의 현대적 후속작으로, Chromium(QtWebEngine) 기반의 웹 렌더링 서비스이며 표준 HTTP API를 통해 서비스를 제공합니다. URL을 전달하면 실제 Chromium 브라우저가 페이지를 렌더링합니다. 즉, JS를 실행하고 비동기 콘텐츠가 로드될 때까지 기다린 뒤, 렌더링이 완료된 전체 HTML, PDF, 스크린샷, Markdown, 또는 구조화된 검색 결과를 반환합니다. 또한 롱 폴링과 WebSocket 푸시로 결과를 가져올 수 있고, 내장 MCP 서버를 제공하여 AI 에이전트(ZCode / Claude Code / Cursor / Codex)가 직접 SeimiRender를 구동할 수 있습니다. 실제 브라우저로 렌더링하기 때문에, 브라우저에서 얻을 수 있는 모든 정보는 SeimiRender를 통해서도 얻을 수 있습니다.
 
 #### 기본 설정 ####
-为了让seimiCrawler支持SeimiAgent，首先需要告诉SeimiAgent的服务地址。
+SeimiCrawler가 SeimiRender를 사용하려면 먼저 SeimiRender 서비스 주소를 알려주어야 합니다(기본 HTTP 포트 8088).
 
-##### 直接运行 #####
-通过`SeimiConfig`配置,例如
+##### 직접 실행 #####
+`SeimiConfig`로 설정합니다. 예를 들어:
 
 ```
 SeimiConfig config = new SeimiConfig();
-config.setSeimiAgentHost("127.0.0.1");
+config.setSeimiRenderHost("127.0.0.1");
 Seimi s = new Seimi(config);
 s.goRun("basic");
-
 ```
 
-##### SpringBoot项目 #####
-在application.properties中配置
-
-Note: 对于“自動跳转”和“关于自动跳转”部分，我翻译为“자동 리다이렉트에 대한 정보”以保持一致性，但“以及”应为“와”或“과”（取决于前词的最后一个音节）。正确的句子应是“현재 SeimiCrawler는 301, 302, 그리고 meta refresh 리다이렉트를 지원합니다。”
-
-修正后的翻译：
-
-### 자동 리다이렉트에 대한 정보 ###
-현재 SeimiCrawler는 301, 302, 그리고 meta refresh 리다이렉트를 지원합니다. 이러한 리다이렉트 URL은 `Response` 객체의 `getRealUrl()`을 통해 실제 리다이렉트 후의 연결을 얻을 수 있습니다。
-
+##### SpringBoot 프로젝트 #####
+`application.properties`에서 설정합니다.
 
 ```
-seimi.crawler.seimi-agent-host=xx
-seimi.crawler.seimi-agent-port=xx
+seimi.crawler.seimi-render-host=xx
+seimi.crawler.seimi-render-port=8088
 ```
 
 #### 사용 ####
-SeimiAgent가 처리할 요청을 결정하고 SeimiAgent가 어떻게 처리할지를 지정합니다. 이는 Request 단위에서 이루어집니다.
-- `Request.useSeimiAgent()`
-  SeimiCrawler에게 이 요청이 SeimiAgent에 제출되도록 알려줍니다.
-- `Request.setSeimiAgentRenderTime(long seimiAgentRenderTime)`
-  SeimiAgent의 렌더링 시간(모든 자원 로드 후, 자바스크립트 등의 스크립트를 실행하여 최종 페이지를 렌더링하는 데 SeimiAgent가 얼마나 많은 시간을 줄지를 설정합니다). 시간 단위는 밀리초입니다.
-- `Request.setSeimiAgentUseCookie(Boolean seimiAgentUseCookie)`
-  SeimiAgent가 쿠키를 사용할지 여부를 알려줍니다. 여기서 설정하지 않으면 seimiCrawler의 전역 쿠키 설정에 따라 판단됩니다.
-- 기타
-  만약 Crawler에 프록시를 설정했다면, 이 요청이 SeimiAgent에 전달될 때 seimiCrawler는 자동으로 SeimiAgent에게 이 프록시를 사용하도록 합니다.
+어떤 요청을 SeimiRender에 맡겨 처리할지, 그리고 SeimiRender가 어떻게 처리할지를 지정합니다. 이는 Request 단위에서 이루어집니다.
+- `Request.useSeimiRender()`
+  SeimiCrawler에게 이 요청을 SeimiRender에 브라우저 렌더링하도록 지시합니다.
+- `Request.setSeimiRenderSettleMs(long seimiRenderSettleMs)`
+  SeimiRender의 JS settle 시간(페이지 로딩 완료 후 JS가 실행되어 비동기 콘텐츠가 완전히 렌더링될 때까지 기다리는 밀리초, 0–30000). 생략 시 SeimiRender 기본값(2000ms)이 사용됩니다.
+- `Request.setSeimiRenderOutput(SeimiRenderOutputType)`
+  반환 형식: HTML(기본) / MARKDOWN / PDF / IMG(스크린샷). HTML·MARKDOWN의 경우 렌더링 결과가 Response에 직접 들어가 XPath로 평소처럼 파싱할 수 있습니다.
+- 로그인 상태 및 프록시 참고
+  SeimiRender는 요청 단위의 스크립트 주입이나 cookie 제어를 지원하지 않습니다. 로그인이 필요한 페이지는 SeimiRender의 브라우저 확장 프로그램이나 `POST /cookies` 엔드포인트로 로그인 cookie를 한 번 동기화하면 Chromium이 자동으로 로그인 상태를 가져갑니다. 프록시는 SeimiRender의 `--proxy` 시작 옵션이나 런타임 `POST /proxy`로 서비스 수준에서 설정하세요.
 - 데모
   실제 사용은 [저장소의 데모](https://github.com/zhegexiaohuozi/SeimiCrawler/blob/master/standalone-example/src/main/java/cn/wanghaomiao/crawlers/SeimiAgentDemo.java)를 참고하세요.
 
@@ -423,12 +404,12 @@ public class SeimiCrawlerApplication {
 
 #### 직접 실행, 독립 시작 ####
 
-main 함수를 추가하고, 독립적인 시작 클래스로 만들어 주는 것이 좋습니다. 예를 들어, demo 프로젝트와 같이. main 함수에서 `Seimi` 객체를 초기화하고, `SeimiConfig`를 통해 Redis 클러스터 정보와 같은 분산 큐에 필요한 특정 매개변수, 또는 seimiAgent의 host 정보 등을 구성할 수 있습니다. 물론, `SeimiConfig`는 선택적입니다. 예를 들어:
+main 함수를 추가하고, 독립적인 시작 클래스로 만들어 주는 것이 좋습니다. 예를 들어, demo 프로젝트와 같이. main 함수에서 `Seimi` 객체를 초기화하고, `SeimiConfig`를 통해 Redis 클러스터 정보와 같은 분산 큐에 필요한 특정 매개변수, 또는 SeimiRender의 host 정보 등을 구성할 수 있습니다. 물론, `SeimiConfig`는 선택적입니다. 예를 들어:
 ```
 public class Boot {
     public static void main(String[] args){
         SeimiConfig config = new SeimiConfig();
-//        config.setSeimiAgentHost("127.0.0.1");
+//        config.setSeimiRenderHost("127.0.0.1");
 //        config.redisSingleServer().setAddress("redis://127.0.0.1:6379");
         Seimi s = new Seimi(config);
         s.goRun("basic");
@@ -491,7 +472,7 @@ pom.xml에 플러그인을 추가합니다.
 `mvn clean package`를 실행하면 됩니다. 패키지를 만든 후 디렉토리 구조는 다음과 같습니다:
 ```
 .
-├── bin             # 해당 스크립트에는具체적인 시작 매개변수 설명이 있으므로 여기서는 자세히 설명하지 않습니다
+├── bin             # 해당 스크립트에는 구체적인 시작 매개변수 설명이 있으므로 여기서는 자세히 설명하지 않습니다
 │   ├── run.bat    # Windows용 시작 스크립트
 │   └── run.sh     # Linux용 시작 스크립트
 └── seimi
@@ -567,7 +548,7 @@ public interface SeimiInterceptor {
     public Class<? extends Annotation> getTargetAnnotationClass();
     /**
      * 여러 인터셉터의 실행 순서를 제어해야 할 때 이 메소드를 재정의할 수 있습니다.
-     * @return 가중치, 가중치가 클수록 외부 층에位置，优先拦截
+     * @return 가중치, 가중치가 클수록 외부 층에 위치하여 우선적으로 인터셉트
      */
     public int getWeight();
     /**
@@ -644,7 +625,7 @@ seimi-app.xml에서 redisson을 설정. 2.0 버전부터 기본 분산 큐는 re
 
 ```
 SeimiConfig config = new SeimiConfig();
-config.setSeimiAgentHost("127.0.0.1");
+config.setSeimiRenderHost("127.0.0.1");
 config.redisSingleServer().setAddress("redis://127.0.0.1:6379");
 Seimi s = new Seimi(config);
 s.goRun("basic");
@@ -658,7 +639,7 @@ s.goRun("basic");
 ```
 /**
  * 시스템 큐의 기본 인터페이스를 정의합니다. 자유롭게 구현할 수 있으며, 규격에 맞게 하면 됩니다.
- * @author 汪浩淼 et.tw@163.com
+ * @author Wang Haomiao et.tw@163.com
  * @since 2015/6/2.
  */
 public interface SeimiQueue extends Serializable {

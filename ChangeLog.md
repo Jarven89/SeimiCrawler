@@ -1,5 +1,14 @@
 # Change  log #
 
+## v2.1.5 ##
+- 渲染后端由 SeimiAgent 切换为其现代化升级版 [SeimiRender](https://github.com/zhegexiaohuozi/seimi-render)（基于 Chromium 的网页渲染服务，支持 JS 渲染、SPA、动态内容，返回 html / markdown / pdf / 截图 / 搜索结构化结果，内置 MCP 协议）
+- 适配 SeimiRender 的 `POST /render` 接口（JSON 请求体、`settle_ms` 渲染等待、`output` 输出格式、`long_poll_ms` 同步等结果），并自动从 JSON 响应中解出 `html` / `markdown` 回填至 `Response`
+- 配置项更名为 `seimi.crawler.seimi-render-host` / `seimi.crawler.seimi-render-port`（默认端口 8088）；独立启动通过 `SeimiConfig.setSeimiRenderHost()`
+- `Request` 新增 `useSeimiRender()` / `setSeimiRenderSettleMs()` / `setSeimiRenderOutput()`；新增 `SeimiRenderOutputType`（HTML/IMG/PDF/MARKDOWN）
+- 向后兼容：保留旧的 `useSeimiAgent` / `setSeimiAgentHost` / `SeimiAgentContentType` 等作为 `@Deprecated` 别名委托到新实现
+- 注意：SeimiRender 不支持 per-request 脚本注入与 cookie 控制——登录态请通过其浏览器插件或 `POST /cookies` 接口统一同步，代理请通过其服务级 `--proxy` 或 `POST /proxy` 配置
+- 修复：SeimiRender 响应统一按 UTF-8 解码（`HcDownloader`/`OkHttpDownloader` 在 `useSeimiRender` 时直接 UTF-8、跳过 HTML meta 编码嗅探），解决中文乱码问题
+
 ## v1.3.1 ##
 - 中文参数在框架层强制统一进行`utf8`编码的urlEncode，最大程度减少乱码请求
 - Request请求在去重处理时，将区分范围扩大到所设定的请求参数

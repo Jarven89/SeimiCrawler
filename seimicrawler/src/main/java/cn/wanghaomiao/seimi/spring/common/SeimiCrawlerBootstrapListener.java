@@ -104,8 +104,8 @@ public class SeimiCrawlerBootstrapListener implements ApplicationListener<Contex
                 SeimiConfig config = new SeimiConfig();
                 config.setBloomFilterExpectedInsertions(crawlerProperties.getBloomFilterExpectedInsertions());
                 config.setBloomFilterFalseProbability(crawlerProperties.getBloomFilterFalseProbability());
-                config.setSeimiAgentHost(crawlerProperties.getSeimiAgentHost());
-                config.setSeimiAgentPort(crawlerProperties.getSeimiAgentPort());
+                config.setSeimiRenderHost(crawlerProperties.getSeimiRenderHost());
+                config.setSeimiRenderPort(crawlerProperties.getSeimiRenderPort());
                 CrawlerCache.setConfig(config);
             }
         }
